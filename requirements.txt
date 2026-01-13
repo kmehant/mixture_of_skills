@@ -3,7 +3,7 @@ datasets
 torch==2.3.0
 vllm==0.5.1
 accelerate
-deepspeed==0.14.0
+deepspeed==0.15.0
 evaluate
 wandb==0.17.5
 scikit-learn
