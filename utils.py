@@ -492,6 +492,7 @@ class DynaTrainer(Trainer):
         grad_norm: Optional[float] = None
 
         self.control = self.callback_handler.on_train_begin(args, self.state, self.control)
+        self.state.stateful_callbacks["TrainerControl"] = self.control.state()
 
         # Skip the first epochs_trained epochs to get the random state of the dataloader at the right point.
         if not args.ignore_data_skip:
