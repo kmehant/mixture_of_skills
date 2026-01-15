@@ -133,6 +133,7 @@ class MultiDataset:
         return random.choice(dataset)
     
     def prepare_dataset(self):
+        print(f"model device: {self.model.device}")
         for category, dataset in self.datasets.items():
             data = self.datasets[category]
             print(f"Formatting {category} ...")

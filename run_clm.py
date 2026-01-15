@@ -473,7 +473,7 @@ def main():
 
     init_probs = OrderedDict([(k, len(v) / sum([len(v) for v in raw_datasets.values()])) for k, v in raw_datasets.items()])
     rebalanced_probs = balance_probabilities_by_temperature(init_probs, data_args.dataset_init_temperature)
-
+    model = model.to("cuda")
     train_dataset = MultiDataset(
         datasets=raw_datasets, 
         category_probabilities=rebalanced_probs, 
@@ -483,6 +483,7 @@ def main():
         ema_alpha=data_args.ema_alpha,
         model=model,
     )
+    model = model.to("cpu")
     print("===================================")
     print(train_dataset[0])
     print(train_dataset[0]["text"])
