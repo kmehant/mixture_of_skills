@@ -138,21 +138,24 @@ class MultiDataset:
             print(f"Formatting {category} ...")
             data = data.map(self.format_text, num_proc=4)
             print(f"Tokenizing {category} and precomputing ppl ...")
-            data = data.map(self.tokenize_fn, num_proc=1)
-            print(data)
-
-            self.datasets[category] = data
+            data = data.map(self.tokenize_fn, num_proc=4)
+            new_rows = []
+            for example in data:
+                input_ids = torch.tensor([example["input_ids"]]).long().to(self.model.device)
+                attention_mask = torch.tensor([example["attention_mask"]]).long().to(self.model.device)
+                labels = input_ids.clone().detach().to(self.model.device)
+                with torch.no_grad():
+                    loss = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels).loss
+                example[f"{self.model_id}_ppl"] = float(torch.exp(loss).item())
+                new_rows.append(example)
+            from datasets import Dataset
+            new_dataset = Dataset.from_list(new_rows)
+            self.datasets[category] = new_dataset
 
     def tokenize_fn(self, example):
         inputs = self.tokenizer(example["text"], truncation=True, max_length=2048)
         example["input_ids"] = inputs["input_ids"]
         example["attention_mask"] = inputs["attention_mask"]
-        input_ids = torch.tensor([example["input_ids"]]).long().to(self.model.device)
-        attention_mask = torch.tensor([example["attention_mask"]]).long().to(self.model.device)
-        labels = input_ids.clone().detach().to(self.model.device)
-        with torch.no_grad():
-            loss = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels).loss
-        example[f"{self.model_id}_ppl"] = float(torch.exp(loss).item())
         return example
 
     def format_text(self, example):
