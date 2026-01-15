@@ -81,11 +81,14 @@ class MultiDataset:
         prob_log_path=None,
         model_id=None,
         ema_alpha=None,
+        model=None,
     ):  
 
         self.datasets = datasets
         self.category_probabilities = category_probabilities
         self.ema_alpha = ema_alpha
+        self.model = model
+        self.model_id = model_id
 
         print("Category Probabilities")
         for k, v in self.category_probabilities.items():
@@ -100,6 +103,7 @@ class MultiDataset:
         self.pad_token_id = tokenizer.pad_token_id
         self.max_length = min(2048, tokenizer.model_max_length)
         self.prepare_dataset()
+        
 
         self.category_occurrences = OrderedDict([(k, 0) for k, v in self.datasets.items()])
 
@@ -109,7 +113,6 @@ class MultiDataset:
         
         self.write_one_log(self.last_step, self.category_probabilities)
 
-        self.model_id = model_id
 
         # ema
         self.prev_rewards = OrderedDict([(k, 1) for k, v in self.datasets.items()])
@@ -134,7 +137,7 @@ class MultiDataset:
             data = self.datasets[category]
             print(f"Formatting {category} ...")
             data = data.map(self.format_text, num_proc=4)
-            print(f"Tokenizing {category} ...")
+            print(f"Tokenizing {category} and precomputing ppl ...")
             data = data.map(self.tokenize_fn, num_proc=4)
             print(data)
 
@@ -144,6 +147,12 @@ class MultiDataset:
         inputs = self.tokenizer(example["text"], truncation=True, max_length=2048)
         example["input_ids"] = inputs["input_ids"]
         example["attention_mask"] = inputs["attention_mask"]
+        input_ids = torch.tensor([example["input_ids"]]).long().to(self.model.device)
+        attention_mask = torch.tensor([example["attention_mask"]]).long().to(self.model.device)
+        labels = input_ids.clone().detach().to(self.model.device)
+        with torch.no_grad():
+            loss = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels).loss
+        example[f"{self.model_id}_ppl"] = float(torch.exp(loss).item())
         return example
 
     def format_text(self, example):

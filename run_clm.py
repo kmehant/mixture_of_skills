@@ -481,6 +481,7 @@ def main():
         prob_log_path=os.path.join(training_args.output_dir, "prob_log.jsonl"),
         model_id=model_args.model_name_or_path,
         ema_alpha=data_args.ema_alpha,
+        model=model,
     )
     print("===================================")
     print(train_dataset[0])
