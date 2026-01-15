@@ -138,7 +138,7 @@ class MultiDataset:
             print(f"Formatting {category} ...")
             data = data.map(self.format_text, num_proc=4)
             print(f"Tokenizing {category} and precomputing ppl ...")
-            data = data.map(self.tokenize_fn, num_proc=4)
+            data = data.map(self.tokenize_fn, num_proc=1)
             print(data)
 
             self.datasets[category] = data
