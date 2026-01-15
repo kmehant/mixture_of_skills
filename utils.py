@@ -137,11 +137,13 @@ class MultiDataset:
         for category, dataset in self.datasets.items():
             data = self.datasets[category]
             print(f"Formatting {category} ...")
-            data = data.map(self.format_text, num_proc=4)
+            # data = data.map(self.format_text, num_proc=4)
             print(f"Tokenizing {category} and precomputing ppl ...")
-            data = data.map(self.tokenize_fn, num_proc=4)
+            # data = data.map(self.tokenize_fn, num_proc=4)
             new_rows = []
             for example in data:
+                example = self.format_text(example)
+                example = self.tokenize_fn(example)
                 input_ids = torch.tensor([example["input_ids"]]).long().to(self.model.device)
                 attention_mask = torch.tensor([example["attention_mask"]]).long().to(self.model.device)
                 labels = input_ids.clone().detach().to(self.model.device)
