@@ -164,7 +164,12 @@ class MultiDataset:
     def format_text(self, example):
 
         conv = example["conversations"]
-        text = self.tokenizer.apply_chat_template(conv, tokenize=False)
+        tools = example["tools"] if "tools" in example else None
+        documents = example["documents"] if "documents" in example else None
+
+        if tools and isinstance(tools, str):
+            tools = json.loads(tools)
+        text = self.tokenizer.apply_chat_template(conv, tokenize=False, tools=tools, documents=documents)
         example["text"] = text.strip()
 
         return example
